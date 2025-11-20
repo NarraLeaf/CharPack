@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CharPack Browser Example</title>
+</head>
+<body>
+  <h1>CharPack Browser Example</h1>
+  
+  <h2>Pack Images</h2>
+  <input type="file" id="imageFiles" multiple accept="image/*">
+  <button onclick="packImages()">Pack Images</button>
+  
+  <h2>Unpack CharPack</h2>
+  <input type="file" id="charpackFile" accept=".charpack">
+  <button onclick="unpackCharPack()">Unpack</button>
+  
+  <div id="output"></div>
+
+  <script type="module">
+    import { charpack, unpack, extract, read } from '@narraleaf/charpack/browser';
+
+    // Pack images into a CharPack file
+    window.packImages = async function() {
+      const fileInput = document.getElementById('imageFiles');
+      const files = fileInput.files;
+      
+      if (files.length === 0) {
+        alert('Please select images to pack');
+        return;
+      }
+
+      // Read files as buffers
+      const images = {};
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const name = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+        images[name] = buffer;
+      }
+
+      // Pack images
+      charpack(images, (charpackBuffer) => {
+        // Download the CharPack file
+        const blob = new Blob([charpackBuffer], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'character.charpack';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('CharPack created successfully!');
+      });
+    };
+
+    // Unpack a CharPack file
+    window.unpackCharPack = async function() {
+      const fileInput = document.getElementById('charpackFile');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert('Please select a CharPack file');
+        return;
+      }
+
+      // Read file as buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Unpack all variations
+      unpack(buffer, (images) => {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = '<h3>Unpacked Images:</h3>';
+        
+        // Display each variation
+        for (const [name, imageBuffer] of Object.entries(images)) {
+          const blob = new Blob([imageBuffer], { type: 'image/png' });
+          const url = URL.createObjectURL(blob);
+          
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = name;
+          img.style.maxWidth = '200px';
+          img.style.margin = '10px';
+          
+          const label = document.createElement('p');
+          label.textContent = name;
+          
+          outputDiv.appendChild(label);
+          outputDiv.appendChild(img);
+        }
+        
+        alert('CharPack unpacked successfully!');
+      });
+    };
+
+    // Example: Extract single variation
+    async function extractExample(charpackBuffer, variationName) {
+      const image = await extract(charpackBuffer, variationName);
+      const pngBuffer = await image.png();
+      const base64 = await image.base64();
+      
+      // Display image
+      const img = document.createElement('img');
+      img.src = base64;
+      document.body.appendChild(img);
+    }
+
+    // Example: Read multiple variations
+    async function readExample(charpackBuffer) {
+      const pack = await read(charpackBuffer);
+      
+      const smile = await pack.png('smile');
+      const angry = await pack.png('angry');
+      const sad = await pack.base64('sad'); // Can get as base64 directly
+      
+      pack.dispose(); // Clean up
+    }
+  </script>
+</body>
+</html>
+

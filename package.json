@@ -2,14 +2,29 @@
   "name": "@narraleaf/charpack",
   "version": "0.1.0",
   "description": "CharPack is an image compression tool optimized for character illustrations. ",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "directories": {
     "doc": "docs"
   },
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser/index.js",
+      "require": "./dist/browser/index.js",
+      "types": "./dist/browser/index.d.ts"
+    }
+  },
   "scripts": {
-    "build:dev": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --minify",
-    "prepublishOnly": "yarn build"
+    "build:node": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:sharp --external:glob",
+    "build:browser": "esbuild src/browser/index.ts --bundle --platform=browser --format=esm --outfile=dist/browser/index.js",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:dev": "npm run build:node && npm run build:browser && npm run build:types",
+    "build": "npm run build:node -- --minify && npm run build:browser -- --minify && npm run build:types",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -20,12 +35,23 @@
     "esbuild": "^0.19.0",
     "typescript": "^5.0.0"
   },
-  "keywords": ["narraleaf", "charpack", "image", "compression", "character", "illustration"],
+  "keywords": [
+    "narraleaf",
+    "charpack",
+    "image",
+    "compression",
+    "character",
+    "illustration"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/NarraLeaf/CharPack/issues"
   },
-  "homepage": "https://github.com/NarraLeaf/CharPack#readme"
+  "homepage": "https://github.com/NarraLeaf/CharPack#readme",
+  "dependencies": {
+    "glob": "^10.5.0",
+    "sharp": "^0.34.5"
+  }
 }
