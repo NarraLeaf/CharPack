@@ -138,16 +138,16 @@ pack.dispose(); // Free the memory
 To use CharPack in a browser environment, you can use the `@narraleaf/charpack/browser` package.
 
 ```ts
-import { charpack, fromBuffer } from '@narraleaf/charpack/browser';
+import { charpack } from '@narraleaf/charpack/browser';
 
 const image1, image2, image3 = /* Your Implementation to get the image buffer */;
 
 charpack(
-    fromBuffer({
+    {
         "smile": image1,
         "angry": image2,
         "sad": image3,
-    }),
+    },
     (buffer) => {
         // Your Implementation to save the file
     }

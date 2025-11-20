@@ -1,0 +1,31 @@
+{
+  "name": "@narraleaf/charpack",
+  "version": "0.1.0",
+  "description": "CharPack is an image compression tool optimized for character illustrations. ",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build:dev": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --minify",
+    "prepublishOnly": "yarn build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NarraLeaf/CharPack.git"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["narraleaf", "charpack", "image", "compression", "character", "illustration"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NarraLeaf/CharPack/issues"
+  },
+  "homepage": "https://github.com/NarraLeaf/CharPack#readme"
+}
