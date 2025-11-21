@@ -31,12 +31,19 @@ await charpack({
     input: "./input/images/*",   // Input directory (glob)
     output: "./output.charpack", // Output package
     config: {
-        blockSize: 8,                    // Smaller blocks for better precision
-        colorDistanceThreshold: 8,        // Tolerate slight color differences (sharpening artifacts)
-        diffToleranceRatio: 0.05,         // Allow 5% of pixels in a block to be different (handle scattered noise)
+        blockSize: 8,              // Smaller blocks for better precision
+        colorDistanceThreshold: 8, // Tolerate slight color differences (sharpening artifacts)
+        diffToleranceRatio: 0.05,  // Allow 5% of pixels in a block to be different (handle scattered noise)
     },
 });
 ```
+
+`blockSize` should be between 4 and 128. The smaller the block size, the more precise the compression, but
+longer the compression time. In most cases, 8 is a good compromise between precision and speed.
+
+`colorDistanceThreshold` should be between 0 and 441.7. The larger the threshold, the more pixels are considered identical. If image integrity is not a primary concern, a value of 8-16 is recommended. This option defaults to 0 (for strict comparison).
+
+`diffToleranceRatio` should be between 0 and 1. The larger the ratio, the more chunks are considered identical. If image integrity is not a primary concern, a value of 0.05-0.1 is recommended. This option defaults to 0 (for strict comparison).
 
 > **Note:**
 > 
@@ -82,33 +89,6 @@ unpack(
 );
 ```
 
-> **Note:**
-> 
-> The output directory will be created if it does not exist.
-
-To unpack a single variation from a character pack into an individual image:
-
-```ts
-unpack(
-    "./input.charpack", // Input Package
-    "./output/smile.png", // Output File
-    "smile", // Variation Name
-);
-```
-
-To unpack multiple variations from a character pack into individual images: 
-
-```ts
-unpack(
-    "./input.charpack", // Input Package
-    {
-        "smile": "./output/smile.png",
-        "angry": "./output/angry.png",
-        "sad": "./output/sad.png",
-    }
-);
-```
-
 ### Read
 
 To read a character variation from a character pack:
@@ -137,6 +117,8 @@ const sadImage = await pack.png("sad");
 
 pack.dispose(); // Free the memory
 ```
+
+For more details for CharPack Node.js API, see [Documentation](./docs/documentation.md)
 
 ## Browser Environment
 

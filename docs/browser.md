@@ -6,7 +6,7 @@ To use CharPack in a browser environment, you can use the `@narraleaf/charpack/b
 
 ## Unpacking Syntax
 
-### unpack(input: Buffer, callback: (images: Record<string, Buffer>) => void): void
+### unpack(input: Buffer | Uint8Array, callback: (images: Record<string, Buffer>) => void): void
 
 This will unpack the given character pack into individual images and return the images as a record of variation names and image buffers.
 
@@ -25,7 +25,7 @@ unpack(
 );
 ```
 
-### unpack(input: Buffer, variations: string[], callback: (images: Record<string, Buffer>) => void): void
+### unpack(input: Buffer | Uint8Array, variations: string[], callback: (images: Record<string, Buffer>) => void): void
 
 This will unpack the given character pack and return the images for the given variations.
 
@@ -43,14 +43,15 @@ unpack(
 
 ## Read Syntax
 
-### extract(input: Buffer, variation: string): CharPack
+### extract(input: Buffer | Uint8Array, variation: string): Promise<CharPackImage>
 
-This will extract the given variation from the character pack and return the image buffer.
+This will extract the given variation from the character pack and return a CharPackImage object.
 
 ```ts
 import { extract } from '@narraleaf/charpack/browser';
 
-const image = await extract(buffer, "smile").png(); // Returns a Buffer
+const image = await extract(buffer, "smile");
+const pngBuffer = await image.png(); // Returns a Buffer
 ```
 
 This returns a `CharPackImage` object that can be used to get the image.
@@ -64,7 +65,7 @@ interface CharPackImage {
 }
 ```
 
-### read(input: Buffer): Promise<MemoryCharPack>
+### read(input: Buffer | Uint8Array): Promise<MemoryCharPack>
 
 This will read the given character pack into memory and return a `MemoryCharPack` object that can be used to get the images.
 
@@ -77,7 +78,7 @@ const smileImage = await pack.png("smile"); // Returns a Buffer
 const angryImage = await pack.png("angry");
 const sadImage = await pack.png("sad");
 
-pack.dispose(); // Unlink the buffer reference
+pack.dispose(); // Free the memory
 ```
 
 It is helpful to read multiple variations without reading the pack multiple times.

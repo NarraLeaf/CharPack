@@ -97,10 +97,10 @@ function filesToMap(
       name = config.variationName(file);
     } else {
       const basename = path.basename(file);
-      if (config.withExtension === false) {
-        name = path.parse(basename).name;
-      } else {
+      if (config.withExtension) {
         name = basename;
+      } else {
+        name = path.parse(basename).name;
       }
     }
 

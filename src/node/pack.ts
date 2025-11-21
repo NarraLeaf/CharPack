@@ -64,8 +64,8 @@ export async function charpack(options: {
       img.data,
       config.blockSize ?? 32,
       config.diffThreshold ?? 0,
-      0, // colorDistanceThreshold
-      0, // diffToleranceRatio
+      config.colorDistanceThreshold ?? 0,
+      config.diffToleranceRatio ?? 0,
       img.name // imageName for debugging
     );
     variations.push({ name: img.name, patches });
@@ -123,10 +123,10 @@ function filesToMap(
       name = config.variationName(file);
     } else {
       const basename = path.basename(file);
-      if (config.withExtension === false) {
-        name = path.parse(basename).name;
-      } else {
+      if (config.withExtension) {
         name = basename;
+      } else {
+        name = path.parse(basename).name;
       }
     }
 

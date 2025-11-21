@@ -22,20 +22,42 @@ charpack([
 });
 ```
 
-The `PackConfig` is an optional object that can be used to configure the packing process:  
+The `PackConfig` is an optional object that can be used to configure the packing process:
 ```ts
-type PackConfig = {
+interface PackConfig {
   /**
    * Whether to include the extension in the variation name.
-   * @default true
+   * @default false
    */
   withExtension?: boolean;
   /**
    * A function to customize the variation name.
-   * @default (filePath) => path.basename(filePath, path.extname(filePath))
    */
   variationName?: (filePath: string) => string;
-};
+  /**
+   * Size of the blocks to use when diffing images.
+   * Smaller blocks provide more precise patches but may result in more
+   * patches and larger file sizes. Larger blocks are faster but less precise.
+   * @default 32
+   * @range 4-128 recommended
+   */
+  blockSize?: number;
+  /**
+   * Per-channel absolute difference tolerance (0-255).
+   * @default 0 (strict equality)
+   */
+  diffThreshold?: number;
+  /**
+   * Euclidean color distance tolerance in RGB space (0-441.7).
+   * @default 0 (use diffThreshold instead)
+   */
+  colorDistanceThreshold?: number;
+  /**
+   * Fuzzy tolerance ratio for block-level differences (0-1).
+   * @default 0 (any differing pixel makes the block different)
+   */
+  diffToleranceRatio?: number;
+}
 ```
 
 > **Note:**
@@ -45,7 +67,7 @@ type PackConfig = {
 > - Unsupported file format
 > - Any other error that occurs during the packing process, such as file system errors, etc.
 
-### charpack(options: { input: string | string[] | Record<string,string>; output?: string; config?: PackConfig }): Promise<void>
+### charpack(options: { input: string | string[] | Record<string,string>; output: string; config?: PackConfig }): Promise<void>
 
 Packs multiple character variation images into a single compressed `.charpack` file by identifying and removing duplicate image data across variations. This function supports various input formats including glob patterns, file arrays, and named objects, and provides configuration options for customizing the packing process.
 
@@ -213,7 +235,7 @@ interface CharPack {
   base64(variation: string): Promise<string>;
   dispose(): void;
   refresh(): void;
-  add(input: string | string[] | Record<string,string>): Promise<void>;
+  add(input: string | string[] | Record<string, string>, config?: PackConfig): Promise<void>;
   remove(variation: string): Promise<void>;
   list(): Promise<string[]>;
 }

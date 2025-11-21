@@ -8,7 +8,7 @@
 export interface PackConfig {
   /**
    * Whether to include the extension in the variation name.
-   * @default true
+   * @default false
    */
   withExtension?: boolean;
   /**

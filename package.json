@@ -23,7 +23,7 @@
     "build:browser": "esbuild src/browser/index.ts --bundle --platform=browser --format=esm --outfile=dist/browser/index.js --external:sharp",
     "build:types": "tsc --emitDeclarationOnly",
     "build:dev": "npm run build:node && npm run build:browser && npm run build:types",
-    "build": "npm run build:node -- --minify && npm run build:types",
+    "build": "npm run build:node -- --minify && npm run build:types && npm run build:browser -- --minify",
     "test": "node test/pack-test.js",
     "prepublishOnly": "npm run build"
   },

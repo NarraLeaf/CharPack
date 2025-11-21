@@ -1,10 +1,9 @@
 /**
- * CharPack - Browser Entry Point
- * Image compression tool optimized for character illustrations
+ * Browser entry point for CharPack
  */
 
-export { unpack } from './unpack';
-export { extract, read } from './read';
+// Export browser-compatible read functions
+export { extract, read, unpack } from './read';
 
-export type { CharPackImage as CharPack, CharPack as MemoryCharPack } from '../core/types';
-
+// Re-export image processor functions for advanced usage
+export { toPNG, toJPEG, toWebP, toBase64 } from './image-processor';

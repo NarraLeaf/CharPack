@@ -52,7 +52,7 @@ async function main() {
         config: {
             blockSize: 8,                    // Smaller blocks for better precision
             colorDistanceThreshold: 16,        // Tolerate slight color differences (sharpening artifacts)
-            diffToleranceRatio: 0.1,         // Allow 5% of pixels in a block to be different (handle scattered noise)
+            diffToleranceRatio: 0.05,         // Allow 5% of pixels in a block to be different (handle scattered noise)
         },
     });
 
