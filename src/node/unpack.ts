@@ -56,7 +56,7 @@ export async function unpack(
 
     const result: Record<string, string> = {};
     for (const varMeta of charPackData.variations) {
-      const image = applyPatches(baseImage, varMeta.patches);
+      const image = await applyPatches(baseImage, varMeta.patches);
       const pngBuffer = await toPNG(image);
       const outputPath = path.join(output, `${varMeta.name}.png`);
       await fs.writeFile(outputPath, pngBuffer);
@@ -72,7 +72,7 @@ export async function unpack(
       throw new Error(`Variation '${variation}' not found in CharPack`);
     }
 
-    const image = applyPatches(baseImage, varMeta.patches);
+    const image = await applyPatches(baseImage, varMeta.patches);
     const pngBuffer = await toPNG(image);
     await fs.mkdir(path.dirname(output), { recursive: true });
     await fs.writeFile(output, pngBuffer);
@@ -88,7 +88,7 @@ export async function unpack(
         throw new Error(`Variation '${varName}' not found in CharPack`);
       }
 
-      const image = applyPatches(baseImage, varMeta.patches);
+      const image = await applyPatches(baseImage, varMeta.patches);
       const pngBuffer = await toPNG(image);
       await fs.mkdir(path.dirname(outputPath), { recursive: true });
       await fs.writeFile(outputPath, pngBuffer);

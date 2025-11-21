@@ -57,10 +57,16 @@ export async function charpack(options: {
   const baseImage = firstImage;
 
   // Calculate diffs for all variations
-  const variations: VariationMetadata[] = images.map((img) => ({
-    name: img.name,
-    patches: calculateDiff(baseImage, img.data),
-  }));
+  const variations: VariationMetadata[] = [];
+  for (const img of images) {
+    const patches = await calculateDiff(
+      baseImage,
+      img.data,
+      config.blockSize ?? 32,
+      config.diffThreshold ?? 0,
+    );
+    variations.push({ name: img.name, patches });
+  }
 
   // Create CharPack data
   const charPackData: CharPackData = {

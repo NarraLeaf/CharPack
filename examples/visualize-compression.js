@@ -4,7 +4,7 @@
  * to see which parts of images are actually compressed/stored as diffs.
  */
 
-const { charpack, visualizeCompression, visualizeVariationPatches, deserialize } = require('../dist/index.js');
+const { charpack, visualizeCompression, visualizeVariationPatchesFromData, deserialize } = require('../dist/index.js');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -27,6 +27,11 @@ async function main() {
     await charpack({
       input: "test/ignored/input/*.png",
       output: charpackPath,
+      config: {
+        blockSize: 8,                    // Smaller blocks for better precision
+        colorDistanceThreshold: 16,        // Tolerate slight color differences (sharpening artifacts)
+        diffToleranceRatio: 0.1,         // Allow 5% of pixels in a block to be different (handle scattered noise)
+      },
     });
     console.log(`CharPack file created: ${charpackPath}`);
 
@@ -68,7 +73,7 @@ async function generateAllVisualizations(charpackPath, outputDir) {
 
   // Generate individual variation visualizations
   for (const variation of charPackData.variations) {
-    const variationVisualization = await visualizeVariationPatches(charpackPath, variation.name);
+    const variationVisualization = await visualizeVariationPatchesFromData(charPackData, variation.name);
     const variationPath = path.join(outputDir, `variation-${variation.name}.png`);
     await fs.writeFile(variationPath, await variationVisualization.png());
     console.log(`- Variation '${variation.name}': ${variationPath} (${variation.patches.length} patches)`);

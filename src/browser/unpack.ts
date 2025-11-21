@@ -3,7 +3,7 @@
  */
 
 import { deserialize } from '../core/format';
-import { applyPatches } from '../core/diff';
+import { applyPatches } from './diff';
 import { toPNG } from './image-processor';
 import { RawImageData } from '../core/types';
 
@@ -46,7 +46,7 @@ export async function unpack(
   // Case 1: Unpack all variations
   if (typeof variationsOrCallback === 'function') {
     for (const varMeta of charPackData.variations) {
-      const image = applyPatches(baseImage, varMeta.patches);
+      const image = await applyPatches(baseImage, varMeta.patches);
       const pngBuffer = await toPNG(image);
       result[varMeta.name] = pngBuffer;
     }
@@ -62,7 +62,7 @@ export async function unpack(
         throw new Error(`Variation '${varName}' not found in CharPack`);
       }
 
-      const image = applyPatches(baseImage, varMeta.patches);
+      const image = await applyPatches(baseImage, varMeta.patches);
       const pngBuffer = await toPNG(image);
       result[varName] = pngBuffer;
     }

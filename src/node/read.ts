@@ -32,7 +32,7 @@ export async function extract(input: string, variation: string): Promise<CharPac
     data: charPackData.baseImage,
   };
 
-  const image = applyPatches(baseImage, varMeta.patches);
+  const image = await applyPatches(baseImage, varMeta.patches);
 
   return {
     png: () => toPNG(image),
@@ -56,7 +56,7 @@ export async function read(input: string): Promise<MemoryCharPack> {
     data: charPackData.baseImage,
   };
 
-  const getImage = (variation: string): RawImageData => {
+  const getImage = async (variation: string): Promise<RawImageData> => {
     const varMeta = charPackData.variations.find((v) => v.name === variation);
     if (!varMeta) {
       throw new Error(`Variation '${variation}' not found in CharPack`);
@@ -65,10 +65,10 @@ export async function read(input: string): Promise<MemoryCharPack> {
   };
 
   return {
-    png: async (variation: string) => toPNG(getImage(variation)),
-    jpeg: async (variation: string) => toJPEG(getImage(variation)),
-    webp: async (variation: string) => toWebP(getImage(variation)),
-    base64: async (variation: string) => toBase64(getImage(variation)),
+    png: async (variation: string) => toPNG(await getImage(variation)),
+    jpeg: async (variation: string) => toJPEG(await getImage(variation)),
+    webp: async (variation: string) => toWebP(await getImage(variation)),
+    base64: async (variation: string) => toBase64(await getImage(variation)),
     dispose: () => {
       // Release references to help GC
       (charPackData as any) = null;
@@ -125,6 +125,15 @@ export async function visualizeVariationPatches(input: string, variationName: st
   const buffer = await fs.readFile(input);
   const charPackData = deserialize(buffer);
 
+  return visualizeVariationPatchesFromData(charPackData, variationName);
+}
+
+/**
+ * Create a visualization for a specific variation showing its patches from deserialized data
+ * Red areas show the patches that differ from the base image
+ * This version avoids re-reading the file if data is already available
+ */
+export async function visualizeVariationPatchesFromData(charPackData: any, variationName: string): Promise<CharPack> {
   const baseImage: RawImageData = {
     width: charPackData.width,
     height: charPackData.height,
@@ -132,13 +141,16 @@ export async function visualizeVariationPatches(input: string, variationName: st
     data: charPackData.baseImage,
   };
 
-  const variation = charPackData.variations.find(v => v.name === variationName);
+  const variation = charPackData.variations.find((v: any) => v.name === variationName);
   if (!variation) {
     throw new Error(`Variation '${variationName}' not found in CharPack`);
   }
 
-  // Create visualization highlighting this variation's patches
-  const visualizationImage = createVariationPatchesVisualization(baseImage, variation.patches);
+  // Compose the full variation image first to use as visualization background
+  const variationImage = applyPatches(baseImage, variation.patches);
+
+  // Create visualization highlighting this variation's patches on top of the variation image
+  const visualizationImage = createVariationPatchesVisualization(await variationImage, variation.patches);
 
   return {
     png: () => toPNG(visualizationImage),
