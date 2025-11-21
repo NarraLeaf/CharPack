@@ -70,10 +70,17 @@ await charpack({
 To unpack a character pack into individual images:
 
 ```ts
-unpack(
+const result = await unpack(
     "./input.charpack", // Input Package
     "./output", // Output Directory
 );
+
+console.log(result);
+// {
+//   "smile": "./output/smile.png",
+//   "angry": "./output/angry.png",
+//   "sad": "./output/sad.png"
+// }
 ```
 
 The output directory will be created if it does not exist.
@@ -85,43 +92,55 @@ The output directory will be created if it does not exist.
 > - Variation name is not found in the character pack
 > - Any other error that occurs during the unpacking process, such as file system errors, etc.
 
-### unpack(input: string, output: string): Promise<void>
+### unpack(input: string, output: string): Promise<Record<string, string>>
 
 This will unpack a character pack into individual images and save them to the output directory.
 
 ```ts
 import { unpack } from '@narraleaf/charpack';
 
-unpack(
+const result = await unpack(
     "./input.charpack", // Input Package
     "./output", // Output Directory
 );
+
+console.log(result);
+// {
+//   "smile": "./output/smile.png",
+//   "angry": "./output/angry.png",
+//   "sad": "./output/sad.png"
+// }
 ```
 
-The output directory will be created if it does not exist.
+The output directory will be created if it does not exist. Returns a record mapping variation names to their actual file paths.
 
-### unpack(input: string, output: string, variation: string): Promise<void>
+### unpack(input: string, output: string, variation: string): Promise<Record<string, string>>
 
 This will unpack a single variation from a character pack into an individual image and save it to the output file.
 
 ```ts
 import { unpack } from '@narraleaf/charpack';
 
-unpack(
+const result = await unpack(
     "./input.charpack", // Input Package
     "./output/smile.png", // Output File
     "smile", // Variation Name
 );
+
+console.log(result);
+// { "smile": "./output/smile.png" }
 ```
 
-### unpack(input: string, output: Record<string, string>): Promise<void>
+Returns a record mapping the variation name to its actual file path.
+
+### unpack(input: string, output: Record<string, string>): Promise<Record<string, string>>
 
 This will unpack multiple variations from a character pack into individual images and save them to the output files. The key of the object is the variation name and the value is the output file path.
 
 ```ts
 import { unpack } from '@narraleaf/charpack';
 
-unpack(
+const result = await unpack(
     "./input.charpack", // Input Package
     {
         "smile": "./output/smile.png", // will save the variation "smile" to "./output/smile.png"
@@ -129,7 +148,16 @@ unpack(
         "sad": "./output/sad.png",
     }
 );
+
+console.log(result);
+// {
+//   "smile": "./output/smile.png",
+//   "angry": "./output/angry.png",
+//   "sad": "./output/sad.png"
+// }
 ```
+
+Returns a record mapping variation names to their actual file paths.
 
 ## Read Syntax
 

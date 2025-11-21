@@ -141,3 +141,7 @@ vite.config.ts.timestamp-*
 # NPM/Yarn
 package-lock.json
 yarn.lock
+
+# Project specific
+ignored/
+output/

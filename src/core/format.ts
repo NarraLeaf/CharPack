@@ -24,6 +24,8 @@
  */
 
 import { CharPackData, VariationMetadata, DiffPatch } from './types';
+// Use Brotli for balance between size and decode speed
+import { compress, decompress } from './compress';
 
 const MAGIC = Buffer.from('CHPK', 'utf8');
 const VERSION = 1;
@@ -43,17 +45,22 @@ export function serialize(data: CharPackData): Buffer {
   buffers.push(versionBuf);
   
   // Dimensions
+  // Determine channels *before* compression
+  const channels = data.baseImage.length / (data.width * data.height);
+
   const dimBuf = Buffer.allocUnsafe(9);
   dimBuf.writeUInt32LE(data.width, 0);
   dimBuf.writeUInt32LE(data.height, 4);
-  dimBuf.writeUInt8(data.baseImage.length / (data.width * data.height), 8); // channels
+  dimBuf.writeUInt8(channels, 8); // channels
   buffers.push(dimBuf);
   
-  // Base image
+  // Compress base image via pako deflate
+  const compBase = compress(data.baseImage);
+
   const baseImgSizeBuf = Buffer.allocUnsafe(4);
-  baseImgSizeBuf.writeUInt32LE(data.baseImage.length, 0);
+  baseImgSizeBuf.writeUInt32LE(compBase.length, 0);
   buffers.push(baseImgSizeBuf);
-  buffers.push(data.baseImage);
+  buffers.push(compBase);
   
   // Variation count
   const varCountBuf = Buffer.allocUnsafe(4);
@@ -76,14 +83,17 @@ export function serialize(data: CharPackData): Buffer {
     
     // Each patch
     for (const patch of variation.patches) {
+      // Compress patch data
+      const compPatch = compress(patch.data);
+
       const patchHeaderBuf = Buffer.allocUnsafe(20);
       patchHeaderBuf.writeUInt32LE(patch.rect.x, 0);
       patchHeaderBuf.writeUInt32LE(patch.rect.y, 4);
       patchHeaderBuf.writeUInt32LE(patch.rect.width, 8);
       patchHeaderBuf.writeUInt32LE(patch.rect.height, 12);
-      patchHeaderBuf.writeUInt32LE(patch.data.length, 16);
+      patchHeaderBuf.writeUInt32LE(compPatch.length, 16);
       buffers.push(patchHeaderBuf);
-      buffers.push(patch.data);
+      buffers.push(compPatch);
     }
   }
   
@@ -121,8 +131,9 @@ export function deserialize(buffer: Buffer): CharPackData {
   // Base image
   const baseImgSize = buffer.readUInt32LE(offset);
   offset += 4;
-  const baseImage = buffer.subarray(offset, offset + baseImgSize);
+  const compBase = buffer.subarray(offset, offset + baseImgSize);
   offset += baseImgSize;
+  const baseImage = decompress(compBase);
   
   // Variations
   const varCount = buffer.readUInt32LE(offset);
@@ -152,8 +163,9 @@ export function deserialize(buffer: Buffer): CharPackData {
       offset += 4;
       const dataSize = buffer.readUInt32LE(offset);
       offset += 4;
-      const data = buffer.subarray(offset, offset + dataSize);
+      const compData = buffer.subarray(offset, offset + dataSize);
       offset += dataSize;
+      const data = decompress(compData);
       
       patches.push({
         rect: { x, y, width: patchWidth, height: patchHeight },

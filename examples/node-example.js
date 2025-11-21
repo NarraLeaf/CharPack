@@ -27,12 +27,12 @@ async function main() {
   console.log('✓ Packed images with custom names');
 
   // Example 3: Unpack all variations to directory
-  await unpack('./output/character.charpack', './output/unpacked');
-  console.log('✓ Unpacked all variations');
+  const result1 = await unpack('./output/character.charpack', './output/unpacked');
+  console.log('✓ Unpacked all variations:', result1);
 
   // Example 4: Unpack single variation
-  await unpack('./output/character.charpack', './output/smile.png', 'smile');
-  console.log('✓ Unpacked single variation');
+  const result2 = await unpack('./output/character.charpack', './output/smile.png', 'smile');
+  console.log('✓ Unpacked single variation:', result2);
 
   // Example 5: Extract and convert to different formats
   const image = await extract('./output/character.charpack', 'smile');

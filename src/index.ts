@@ -5,6 +5,9 @@
 
 export { charpack } from './node/pack';
 export { unpack } from './node/unpack';
-export { extract, read } from './node/read';
+export { extract, read, visualizeCompression, visualizeVariationPatches } from './node/read';
+export { deserialize } from './core/format';
+export { applyPatches } from './core/diff';
+export { toPNG } from './node/image-processor';
 
 export type { PackConfig, CharPack, MemoryCharPack } from './core/types';

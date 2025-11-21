@@ -1,38 +1,8 @@
 # Browser Environment
 
-CharPack is also designed to be used in a browser environment.
+CharPack is also designed to be used in a browser environment for reading character pack files.
 
 To use CharPack in a browser environment, you can use the `@narraleaf/charpack/browser` package.
-
-```ts
-charpack(
-    /* Your Implementation to get the image buffer */,
-    (buffer) => { /* Your Implementation to save the file */ }
-);
-```
-
-## Packing Syntax
-
-### charpack(input: Record<string, Buffer>, callback: (buffer: Buffer) => void): void
-
-This will pack the given images into a character pack and return the buffer that represents the `.charpack` file.
-
-```ts
-import { charpack } from '@narraleaf/charpack/browser';
-
-const image1, image2, image3 = /* Your Implementation to get the image buffer */;
-
-charpack(
-    {
-        "smile": image1, // Variation Name : Image Buffer
-        "angry": image2,
-        "sad": image3,
-    },
-    (buffer) => {
-        // Your Implementation to save the `.charpack` file
-    }
-);
-```
 
 ## Unpacking Syntax
 

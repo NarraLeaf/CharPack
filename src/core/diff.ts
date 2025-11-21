@@ -12,7 +12,7 @@ import { RawImageData, DiffPatch, Rectangle } from './types';
 export function calculateDiff(
   baseImage: RawImageData,
   targetImage: RawImageData,
-  blockSize: number = 8
+  blockSize: number = 32
 ): DiffPatch[] {
   if (
     baseImage.width !== targetImage.width ||

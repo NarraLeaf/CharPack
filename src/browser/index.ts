@@ -3,7 +3,6 @@
  * Image compression tool optimized for character illustrations
  */
 
-export { charpack } from './pack';
 export { unpack } from './unpack';
 export { extract, read } from './read';
 
