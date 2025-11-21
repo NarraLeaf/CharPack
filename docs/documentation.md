@@ -67,7 +67,7 @@ interface PackConfig {
 > - Unsupported file format
 > - Any other error that occurs during the packing process, such as file system errors, etc.
 
-### charpack(options: { input: string | string[] | Record<string,string>; output: string; config?: PackConfig }): Promise<void>
+### charpack(options: { input: string | string[] | Record<string,string>; output: string; config?: PackConfig }): Promise\<void>
 
 Packs multiple character variation images into a single compressed `.charpack` file by identifying and removing duplicate image data across variations. This function supports various input formats including glob patterns, file arrays, and named objects, and provides configuration options for customizing the packing process.
 
@@ -114,7 +114,7 @@ The output directory will be created if it does not exist.
 > - Variation name is not found in the character pack
 > - Any other error that occurs during the unpacking process, such as file system errors, etc.
 
-### unpack(input: string, output: string): Promise<Record<string, string>>
+### unpack(input: string, output: string): Promise\<Record\<string, string>>
 
 This will unpack a character pack into individual images and save them to the output directory.
 
@@ -136,7 +136,7 @@ console.log(result);
 
 The output directory will be created if it does not exist. Returns a record mapping variation names to their actual file paths.
 
-### unpack(input: string, output: string, variation: string): Promise<Record<string, string>>
+### unpack(input: string, output: string, variation: string): Promise\<Record\<string, string>>
 
 This will unpack a single variation from a character pack into an individual image and save it to the output file.
 
@@ -155,7 +155,7 @@ console.log(result);
 
 Returns a record mapping the variation name to its actual file path.
 
-### unpack(input: string, output: Record<string, string>): Promise<Record<string, string>>
+### unpack(input: string, output: Record<string, string>): Promise\<Record\<string, string>>
 
 This will unpack multiple variations from a character pack into individual images and save them to the output files. The key of the object is the variation name and the value is the output file path.
 
@@ -183,7 +183,7 @@ Returns a record mapping variation names to their actual file paths.
 
 ## Read Syntax
 
-### extract(input: string, variation: string): CharPack
+### extract(input: string, variation: string): CharPackImage
 
 To read a character variation from a character pack:
 
@@ -207,7 +207,7 @@ interface CharPackImage {
 }
 ```
 
-### read(input: string): Promise<MemoryCharPack>
+### read(input: string): Promise\<CharPack>
 
 This method will read the entire character pack into memory and return a `MemoryCharPack` object that can be used to get the images.
 

@@ -43,7 +43,7 @@ unpack(
 
 ## Read Syntax
 
-### extract(input: Buffer | Uint8Array, variation: string): Promise<CharPackImage>
+### extract(input: Buffer | Uint8Array, variation: string): Promise\<CharPackImage>
 
 This will extract the given variation from the character pack and return a CharPackImage object.
 
@@ -65,7 +65,7 @@ interface CharPackImage {
 }
 ```
 
-### read(input: Buffer | Uint8Array): Promise<MemoryCharPack>
+### read(input: Buffer | Uint8Array): Promise\<MemoryCharPack>
 
 This will read the given character pack into memory and return a `MemoryCharPack` object that can be used to get the images.
 
