@@ -6,5 +6,5 @@
 export { unpack } from './unpack';
 export { extract, read } from './read';
 
-export type { CharPack, MemoryCharPack } from '../core/types';
+export type { CharPackImage as CharPack, CharPack as MemoryCharPack } from '../core/types';
 

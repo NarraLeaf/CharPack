@@ -2,7 +2,7 @@
  * Browser read functionality
  */
 
-import { CharPack, MemoryCharPack, RawImageData } from '../core/types';
+import { CharPackImage, CharPack, RawImageData } from '../core/types';
 import { deserialize } from '../core/format';
 import { applyPatches } from './diff';
 import { toPNG, toJPEG, toWebP, toBase64 } from './image-processor';
@@ -10,7 +10,7 @@ import { toPNG, toJPEG, toWebP, toBase64 } from './image-processor';
 /**
  * Extract a single variation from CharPack buffer
  */
-export async function extract(input: Buffer, variation: string): Promise<CharPack> {
+export async function extract(input: Buffer, variation: string): Promise<CharPackImage> {
   const charPackData = deserialize(input);
 
   const varMeta = charPackData.variations.find((v) => v.name === variation);
@@ -38,7 +38,7 @@ export async function extract(input: Buffer, variation: string): Promise<CharPac
 /**
  * Read entire CharPack buffer into memory for efficient multi-variation reading
  */
-export async function read(input: Buffer): Promise<MemoryCharPack> {
+export async function read(input: Buffer): Promise<CharPack> {
   let charPackData = deserialize(input);
 
   const baseImage: RawImageData = {
@@ -67,6 +67,15 @@ export async function read(input: Buffer): Promise<MemoryCharPack> {
     },
     refresh: () => {
       // No-op in browser environment (cannot reload from disk)
+    },
+    add: async () => {
+      throw new Error('add() is not supported in browser environment');
+    },
+    remove: async () => {
+      throw new Error('remove() is not supported in browser environment');
+    },
+    list: async () => {
+      return charPackData.variations.map(v => v.name);
     },
   };
 }

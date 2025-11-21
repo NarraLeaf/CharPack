@@ -81,7 +81,7 @@ export interface PackConfig {
 /**
  * CharPack API for getting images in different formats
  */
-export interface CharPack {
+export interface CharPackImage {
   png(): Promise<Buffer>;
   jpeg(): Promise<Buffer>;
   webp(): Promise<Buffer>;
@@ -89,15 +89,18 @@ export interface CharPack {
 }
 
 /**
- * In-memory CharPack for efficient multi-variation reading
+ * In-memory CharPack for efficient multi-variation reading and modification
  */
-export interface MemoryCharPack {
+export interface CharPack {
   png(variation: string): Promise<Buffer>;
   jpeg(variation: string): Promise<Buffer>;
   webp(variation: string): Promise<Buffer>;
   base64(variation: string): Promise<string>;
   dispose(): void;
   refresh(): void;
+  add(input: string | string[] | Record<string, string>, config?: PackConfig): Promise<void>;
+  remove(variation: string): Promise<void>;
+  list(): Promise<string[]>;
 }
 
 /**

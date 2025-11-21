@@ -103,9 +103,6 @@ async function runExtractPerformanceTest() {
     const stats = await fs.stat(charpackPath);
     console.log(`CharPack file size: ${stats.size} bytes`);
 
-    console.log('\nNote: Each extraction reads the entire CharPack file from disk,');
-    console.log('      deserializes it, reconstructs the image, and encodes it.');
-
     console.log('\nDisk-based extraction test completed.');
 }
 

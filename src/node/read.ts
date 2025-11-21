@@ -3,51 +3,203 @@
  */
 
 import * as fs from 'fs/promises';
-import { CharPack, MemoryCharPack, RawImageData, Rectangle } from '../core/types';
-import { deserialize } from '../core/format';
-import { applyPatches } from '../core/diff';
-import { toPNG, toJPEG, toWebP, toBase64 } from './image-processor';
+import * as path from 'path';
+import { glob } from 'glob';
+import { CharPackImage, CharPack, RawImageData, Rectangle, PackConfig, CharPackData, VariationMetadata } from '../core/types';
+import { deserialize, parseHeaderWithIndex, VariationIndex, serialize, addVariationsToFile, removeVariationsFromFile } from '../core/format';
+import { applyPatches, calculateDiff } from '../core/diff';
+import { decompress } from '../core/compress';
+import { toPNG, toJPEG, toWebP, toBase64, loadImage } from './image-processor';
 
 // Re-export internal functions for visualization purposes
-export { deserialize } from '../core/format';
+export { deserialize, parseHeaderWithIndex } from '../core/format';
 export { applyPatches } from '../core/diff';
 export { toPNG } from './image-processor';
 
 /**
- * Extract a single variation from CharPack file
+ * Extract and parse a single variation's patch data from a CharPack file using random access.
+ * Uses the index table to read only the required variation block.
  */
-export async function extract(input: string, variation: string): Promise<CharPack> {
-  const buffer = await fs.readFile(input);
-  const charPackData = deserialize(buffer);
+async function extractVariationBlock(
+  fileHandle: fs.FileHandle,
+  variation: VariationIndex
+): Promise<{ name: string; patches: any[] }> {
+  // Read the variation data block
+  const blockBuffer = Buffer.allocUnsafe(variation.size);
+  await fileHandle.read(blockBuffer, 0, variation.size, variation.offset);
 
-  const varMeta = charPackData.variations.find((v) => v.name === variation);
-  if (!varMeta) {
-    throw new Error(`Variation '${variation}' not found in CharPack`);
+  let offset = 0;
+
+  // Parse patch count
+  const patchCount = blockBuffer.readUInt32LE(offset);
+  offset += 4;
+
+  const patches: any[] = [];
+  for (let i = 0; i < patchCount; i++) {
+    const x = blockBuffer.readUInt32LE(offset);
+    offset += 4;
+    const y = blockBuffer.readUInt32LE(offset);
+    offset += 4;
+    const patchWidth = blockBuffer.readUInt32LE(offset);
+    offset += 4;
+    const patchHeight = blockBuffer.readUInt32LE(offset);
+    offset += 4;
+    const dataSize = blockBuffer.readUInt32LE(offset);
+    offset += 4;
+
+    // Decompress patch data
+    const compData = blockBuffer.subarray(offset, offset + dataSize);
+    offset += dataSize;
+    const data = decompress(compData);
+
+    patches.push({
+      rect: { x, y, width: patchWidth, height: patchHeight },
+      data: Buffer.from(data),
+    });
   }
 
-  const baseImage: RawImageData = {
-    width: charPackData.width,
-    height: charPackData.height,
-    channels: charPackData.baseImage.length / (charPackData.width * charPackData.height),
-    data: charPackData.baseImage,
-  };
+  return { name: variation.name, patches };
+}
 
-  const image = await applyPatches(baseImage, varMeta.patches);
+/**
+ * Helper function to resolve input images to name-path mapping
+ */
+async function resolveInputForAdd(
+  input: string | string[] | Record<string, string>,
+  config: PackConfig = {}
+): Promise<Record<string, string>> {
+  if (typeof input === 'string') {
+    // Glob pattern
+    const files = await glob(input, { nodir: true });
+    return filesToMap(files, config);
+  } else if (Array.isArray(input)) {
+    // Array of paths
+    return filesToMap(input, config);
+  } else {
+    // Already a mapping
+    return input;
+  }
+}
 
+/**
+ * Helper function to convert file paths to name-path mapping
+ */
+function filesToMap(
+  files: string[],
+  config: PackConfig
+): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  for (const file of files) {
+    let name: string;
+
+    if (config.variationName) {
+      name = config.variationName(file);
+    } else {
+      const basename = path.basename(file);
+      if (config.withExtension === false) {
+        name = path.parse(basename).name;
+      } else {
+        name = basename;
+      }
+    }
+
+    result[name] = file;
+  }
+
+  return result;
+}
+
+/**
+ * Helper function to repack CharPack data with current images
+ */
+async function repackCharPack(
+  images: Array<{ name: string; data: RawImageData }>,
+  config: PackConfig = {}
+): Promise<CharPackData> {
+  if (images.length === 0) {
+    throw new Error('Cannot repack CharPack with no images');
+  }
+
+  // Use first image as base (this may change the base image)
+  const baseImage = images[0].data;
+
+  // Calculate diffs for all variations
+  const variations: VariationMetadata[] = [];
+  for (const img of images) {
+    const patches = await calculateDiff(
+      baseImage,
+      img.data,
+      config.blockSize ?? 32,
+      config.diffThreshold ?? 0,
+      config.colorDistanceThreshold ?? 0,
+      config.diffToleranceRatio ?? 0,
+      img.name // imageName for debugging
+    );
+    variations.push({ name: img.name, patches });
+  }
+
+  // Create new CharPack data
   return {
-    png: () => toPNG(image),
-    jpeg: () => toJPEG(image),
-    webp: () => toWebP(image),
-    base64: () => toBase64(image),
+    version: 1,
+    width: baseImage.width,
+    height: baseImage.height,
+    format: 'raw',
+    baseImage: baseImage.data,
+    variations,
   };
 }
 
 /**
- * Read entire CharPack into memory for efficient multi-variation reading
+ * Extract a single variation from CharPack file using random access
+ * Reads only the header and the requested variation block for efficiency
  */
-export async function read(input: string): Promise<MemoryCharPack> {
+export async function extract(input: string, variation: string): Promise<CharPackImage> {
+  // Open file for random access
+  const fileHandle = await fs.open(input, 'r');
+
+  try {
+    // Read header and index table (much smaller than full file)
+    const headerBuffer = await fileHandle.readFile();
+    const { width, height, channels, baseImage, variations: index } =
+      parseHeaderWithIndex(headerBuffer);
+
+    // Find the requested variation in index
+    const varEntry = index.find((v) => v.name === variation);
+    if (!varEntry) {
+      throw new Error(`Variation '${variation}' not found in CharPack`);
+    }
+
+    // Extract only the requested variation's patch data
+    const varMeta = await extractVariationBlock(fileHandle, varEntry);
+
+    const baseImageData: RawImageData = {
+      width,
+      height,
+      channels,
+      data: baseImage,
+    };
+
+    const image = await applyPatches(baseImageData, varMeta.patches);
+
+    return {
+      png: () => toPNG(image),
+      jpeg: () => toJPEG(image),
+      webp: () => toWebP(image),
+      base64: () => toBase64(image),
+    };
+  } finally {
+    await fileHandle.close();
+  }
+}
+
+/**
+ * Read entire CharPack into memory for efficient multi-variation reading and modification
+ */
+export async function read(input: string): Promise<CharPack> {
   let buffer = await fs.readFile(input);
   let charPackData = deserialize(buffer);
+  let filePath = input;
 
   const baseImage: RawImageData = {
     width: charPackData.width,
@@ -64,6 +216,14 @@ export async function read(input: string): Promise<MemoryCharPack> {
     return applyPatches(baseImage, varMeta.patches);
   };
 
+  const writeBackToDisk = async (newData: CharPackData) => {
+    const newBuffer = serialize(newData);
+    await fs.writeFile(filePath, newBuffer);
+    // Update in-memory data
+    charPackData = newData;
+    buffer = Buffer.from(newBuffer);
+  };
+
   return {
     png: async (variation: string) => toPNG(await getImage(variation)),
     jpeg: async (variation: string) => toJPEG(await getImage(variation)),
@@ -76,8 +236,80 @@ export async function read(input: string): Promise<MemoryCharPack> {
     },
     refresh: async () => {
       // Reload from disk
-      buffer = await fs.readFile(input);
+      buffer = await fs.readFile(filePath);
       charPackData = deserialize(buffer);
+    },
+    add: async (input: string | string[] | Record<string, string>, packConfig?: PackConfig) => {
+      // Resolve input to name-path mapping
+      const imageMap = await resolveInputForAdd(input);
+
+      // Load new images
+      const newVariations: VariationMetadata[] = [];
+      for (const [name, filePath] of Object.entries(imageMap)) {
+        // Check if variation already exists
+        if (charPackData.variations.some(v => v.name === name)) {
+          throw new Error(`Variation '${name}' already exists in CharPack`);
+        }
+
+        try {
+          const imageData = await loadImage(filePath);
+          // Validate dimensions match
+          if (imageData.width !== charPackData.width || imageData.height !== charPackData.height) {
+            throw new Error(
+              `Image dimensions ${imageData.width}x${imageData.height} don't match CharPack dimensions ${charPackData.width}x${charPackData.height}`
+            );
+          }
+
+          // Calculate patches for the new variation against the current base image
+          const patches = await calculateDiff(
+            baseImage,
+            imageData,
+            packConfig?.blockSize ?? 32,
+            packConfig?.diffThreshold ?? 0,
+            packConfig?.colorDistanceThreshold ?? 0,
+            packConfig?.diffToleranceRatio ?? 0,
+            name // imageName for debugging
+          );
+
+          newVariations.push({ name, patches });
+        } catch (error) {
+          throw new Error(`Failed to load image ${filePath}: ${error}`);
+        }
+      }
+
+      if (newVariations.length === 0) {
+        return; // Nothing to add
+      }
+
+      // Use incremental modification instead of full repack
+      const channels = baseImage.channels;
+      await addVariationsToFile(filePath, newVariations, charPackData.baseImage, charPackData.width, charPackData.height, channels);
+
+      // Update in-memory data by re-reading from disk
+      buffer = await fs.readFile(filePath);
+      charPackData = deserialize(buffer);
+    },
+    remove: async (variation: string) => {
+      // Check if variation exists
+      const variationExists = charPackData.variations.some(v => v.name === variation);
+      if (!variationExists) {
+        throw new Error(`Variation '${variation}' not found in CharPack`);
+      }
+
+      // Check if this would remove all variations
+      if (charPackData.variations.length <= 1) {
+        throw new Error('Cannot remove the last variation from CharPack');
+      }
+
+      // Use incremental modification instead of full repack
+      await removeVariationsFromFile(filePath, [variation]);
+
+      // Update in-memory data by re-reading from disk
+      buffer = await fs.readFile(filePath);
+      charPackData = deserialize(buffer);
+    },
+    list: async () => {
+      return charPackData.variations.map(v => v.name);
     },
   };
 }
@@ -87,7 +319,7 @@ export async function read(input: string): Promise<MemoryCharPack> {
  * Gray areas show parts that are compressed (shared across all variations)
  * Non-gray areas show parts that differ between variations and are stored as patches
  */
-export async function visualizeCompression(input: string): Promise<CharPack> {
+export async function visualizeCompression(input: string): Promise<CharPackImage> {
   const buffer = await fs.readFile(input);
   const charPackData = deserialize(buffer);
 
@@ -121,7 +353,7 @@ export async function visualizeCompression(input: string): Promise<CharPack> {
  * Create a visualization for a specific variation showing its patches
  * Red areas show the patches that differ from the base image
  */
-export async function visualizeVariationPatches(input: string, variationName: string): Promise<CharPack> {
+export async function visualizeVariationPatches(input: string, variationName: string): Promise<CharPackImage> {
   const buffer = await fs.readFile(input);
   const charPackData = deserialize(buffer);
 
@@ -133,7 +365,7 @@ export async function visualizeVariationPatches(input: string, variationName: st
  * Red areas show the patches that differ from the base image
  * This version avoids re-reading the file if data is already available
  */
-export async function visualizeVariationPatchesFromData(charPackData: any, variationName: string): Promise<CharPack> {
+export async function visualizeVariationPatchesFromData(charPackData: any, variationName: string): Promise<CharPackImage> {
   const baseImage: RawImageData = {
     width: charPackData.width,
     height: charPackData.height,

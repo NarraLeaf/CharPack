@@ -174,10 +174,10 @@ const image = await extract(
 ).png(); // Returns a Buffer
 ```
 
-This returns a `CharPack` object that can be used to get the image.
+This returns a `CharPackImage` object that can be used to get the image.
 
 ```ts
-interface CharPack {
+interface CharPackImage {
   png(): Promise<Buffer>;
   jpeg(): Promise<Buffer>;
   webp(): Promise<Buffer>;
@@ -206,13 +206,16 @@ pack.dispose(); // Free the memory
 It is helpful to read multiple variations without reading the pack multiple times.
 
 ```ts
-interface MemoryCharPack {
-    png(variation: string): Promise<Buffer>;
-    jpeg(variation: string): Promise<Buffer>;
-    webp(variation: string): Promise<Buffer>;
-    base64(variation: string): Promise<string>;
-    dispose(): void;
-    refresh(): void;
+interface CharPack {
+  png(variation: string): Promise<Buffer>;
+  jpeg(variation: string): Promise<Buffer>;
+  webp(variation: string): Promise<Buffer>;
+  base64(variation: string): Promise<string>;
+  dispose(): void;
+  refresh(): void;
+  add(input: string | string[] | Record<string,string>): Promise<void>;
+  remove(variation: string): Promise<void>;
+  list(): Promise<string[]>;
 }
 ```
 

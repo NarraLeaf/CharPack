@@ -53,10 +53,10 @@ import { extract } from '@narraleaf/charpack/browser';
 const image = await extract(buffer, "smile").png(); // Returns a Buffer
 ```
 
-This returns a `CharPack` object that can be used to get the image.
+This returns a `CharPackImage` object that can be used to get the image.
 
 ```ts
-interface CharPack {
+interface CharPackImage {
   png(): Promise<Buffer>;
   jpeg(): Promise<Buffer>;
   webp(): Promise<Buffer>;
@@ -89,8 +89,8 @@ interface MemoryCharPack {
     webp(variation: string): Promise<Buffer>;
     base64(variation: string): Promise<string>;
     dispose(): void;
-    refresh(): void;
+    list(): Promise<string[]>;
 }
 ```
 
-The method `refresh()` will do nothing in the browser environment.
+The method `list()` will return the list of variations in the character pack.

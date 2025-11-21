@@ -64,6 +64,9 @@ export async function charpack(options: {
       img.data,
       config.blockSize ?? 32,
       config.diffThreshold ?? 0,
+      0, // colorDistanceThreshold
+      0, // diffToleranceRatio
+      img.name // imageName for debugging
     );
     variations.push({ name: img.name, patches });
   }

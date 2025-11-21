@@ -16,7 +16,8 @@ export async function calculateDiff(
   blockSize: number = 32,
   diffThreshold: number = 0,
   colorDistanceThreshold: number = 0,
-  diffToleranceRatio: number = 0
+  diffToleranceRatio: number = 0,
+  imageName?: string
 ): Promise<DiffPatch[]> {
   if (
     baseImage.width !== targetImage.width ||
@@ -77,6 +78,20 @@ export async function calculateDiff(
       .toBuffer();
 
     patches.push({ rect, data: pngBuf });
+  }
+
+  // Calculate patch area ratio and warn if too large
+  const totalImageArea = width * height;
+  const totalPatchArea = patches.reduce((sum, patch) =>
+    sum + (patch.rect.width * patch.rect.height), 0);
+  const patchRatio = (totalPatchArea / totalImageArea) * 100;
+
+  if (patchRatio > 30) {
+    const imageInfo = imageName ? ` for image "${imageName}"` : '';
+    console.warn(
+      `Warning: Patch area is ${patchRatio.toFixed(1)}% of the image${imageInfo}, ` +
+      `which is larger than 30%. Consider adding this image to a different charpack.`
+    );
   }
 
   return patches;

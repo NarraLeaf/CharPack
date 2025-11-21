@@ -30,6 +30,11 @@ import { charpack } from '@narraleaf/charpack';
 await charpack({
     input: "./input/images/*",   // Input directory (glob)
     output: "./output.charpack", // Output package
+    config: {
+        blockSize: 8,                    // Smaller blocks for better precision
+        colorDistanceThreshold: 8,        // Tolerate slight color differences (sharpening artifacts)
+        diffToleranceRatio: 0.05,         // Allow 5% of pixels in a block to be different (handle scattered noise)
+    },
 });
 ```
 
