@@ -1,5 +1,9 @@
 # CharPack
 
+[![npm version](https://badge.fury.io/js/%40narraleaf%2Fcharpack.svg)](https://badge.fury.io/js/%40narraleaf%2Fcharpack)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+
 ## Introduction
 
 CharPack is an image compression tool optimized for character illustrations. It **doesn't compress individual images, but it removes 
@@ -125,3 +129,7 @@ For more details for CharPack Node.js API, see [Documentation](./docs/documentat
 To use CharPack in a browser environment for reading character pack files, you can use the `@narraleaf/charpack/browser` package.
 
 For more details, see [Browser Environment](./docs/browser.md)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
